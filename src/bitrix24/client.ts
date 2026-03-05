@@ -86,6 +86,9 @@ export interface BitrixTask {
   STATUS?: '1' | '2' | '3' | '4' | '5'; // 1=New, 2=Pending, 3=In Progress, 4=Completed, 5=Deferred
   STAGE?: string;
   UF_CRM_TASK?: string[]; // CRM entities linked to task
+  GROUP_ID?: string;
+  ALLOW_TIME_TRACKING?: 'Y' | 'N';
+  TIME_ESTIMATE?: number; // в секундах
 }
 
 export interface BitrixCompany {
@@ -550,8 +553,24 @@ export class Bitrix24Client {
 
   // Task Methods
   async createTask(task: BitrixTask): Promise<string> {
-    const result = await this.makeRequest('tasks.task.add', { fields: task });
-    return result.task.id.toString();
+    const fields: Record<string, any> = {};
+    Object.entries(task).forEach(([k, v]) => {
+      if (v !== undefined && v !== null) fields[k] = v;
+    });
+    const result = await this.makeRequest('tasks.task.add', { fields });
+    const taskId = result.task.id.toString();
+
+    // tasks.task.add ignores ALLOW_TIME_TRACKING and TIME_ESTIMATE, so update separately (NOT THE FACT)
+    if (task.ALLOW_TIME_TRACKING || task.TIME_ESTIMATE) {
+    const updateParams: Record<string, any> = {
+      taskId,
+      'fields[ALLOW_TIME_TRACKING]': task.ALLOW_TIME_TRACKING || undefined,
+      'fields[TIME_ESTIMATE]': task.TIME_ESTIMATE ? Number(task.TIME_ESTIMATE) : undefined,
+    };
+    await this.makeRequest('tasks.task.update', updateParams);
+  }
+
+    return taskId;
   }
 
   async getTask(id: string): Promise<BitrixTask> {
@@ -565,14 +584,32 @@ export class Bitrix24Client {
   }
 
   async listTasks(params: { 
-    select?: string[];
-    filter?: Record<string, any>;
-    order?: Record<string, string>;
-    start?: number;
-  } = {}): Promise<BitrixTask[]> {
-    const result = await this.makeRequest('tasks.task.list', params);
-    return result.tasks || [];
+  select?: string[];
+  filter?: Record<string, any>;
+  order?: Record<string, string>;
+  start?: number;
+} = {}): Promise<BitrixTask[]> {
+  const requestParams: Record<string, any> = {};
+  
+  if (params.filter) {
+    Object.entries(params.filter).forEach(([k, v]) => {
+      requestParams[`filter[${k}]`] = v;
+    });
   }
+  if (params.order) {
+    Object.entries(params.order).forEach(([k, v]) => {
+      requestParams[`order[${k}]`] = v;
+    });
+  }
+  if (params.select) {
+    params.select.forEach((field, i) => {
+      requestParams[`select[${i}]`] = field;
+    });
+  }
+  
+  const result = await this.makeRequest('tasks.task.list', requestParams);
+  return result.tasks || [];
+}
 
   // Utility Methods
   async getCurrentUser(): Promise<any> {
@@ -1404,6 +1441,47 @@ export class Bitrix24Client {
     // Implementation for performance forecasting
     return { message: 'Performance forecasting - implementation in progress' };
   }
-}
+  
+  // Group & Scrum Methods
+  async listGroups(filter?: Record<string, any>, limit: number = 50): Promise<any[]> {
+    const params: Record<string, any> = {};
+    if (filter) {
+      Object.entries(filter).forEach(([k, v]) => {
+        params[`filter[${k}]`] = v;
+      });
+    }
+    const result = await this.makeRequest('sonet_group.get', params);
+    const groups = Array.isArray(result) ? result : Object.values(result || {});
+    return groups.slice(0, limit);
+  }
 
+  async getGroup(id: string): Promise<any> {
+    const result = await this.makeRequest('sonet_group.get', { 'filter[ID]': id });
+    const groups = Array.isArray(result) ? result : Object.values(result || {});
+    return groups[0] || null;
+  }
+
+  async listScrums(limit: number = 20): Promise<any[]> {
+    const result = await this.makeRequest('tasks.api.scrum.list', {});
+    const scrums = Array.isArray(result) ? result : (result?.scrums || []);
+    return scrums.slice(0, limit);
+  }
+
+  async listSprints(scrumId: string, limit: number = 20): Promise<any[]> {
+    const result = await this.makeRequest('tasks.api.scrum.sprint.list', {
+      'filter[scrumId]': scrumId
+    });
+    const sprints = Array.isArray(result) ? result : (result?.sprints || []);
+    return sprints.slice(0, limit);
+  }
+
+  async listSprintTasks(sprintId: string, limit: number = 50): Promise<any[]> {
+    const result = await this.makeRequest('tasks.api.scrum.task.list', {
+      'filter[sprintId]': sprintId
+    });
+    const tasks = Array.isArray(result) ? result : (result?.tasks || []);
+    return tasks.slice(0, limit);
+  }
+
+}
 export const bitrix24Client = new Bitrix24Client();

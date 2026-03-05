@@ -13,7 +13,8 @@ import { allTools, executeToolCall } from './tools/index.js';
 // Initialize the MCP server
 const server = new Server({
   name: 'bitrix24-mcp-server',
-  version: '1.0.0',
+  version: '1.0.0'
+}, {
   capabilities: {
     tools: {}
   }

@@ -912,6 +912,163 @@ export const getCompaniesWithUserNamesTool: Tool = {
   }
 };
 
+// Task Management Tools
+export const createTaskTool: Tool = {
+  name: 'bitrix24_create_task',
+  description: 'Create a new task in Bitrix24',
+  inputSchema: {
+    type: 'object',
+    properties: {
+      title: { type: 'string', description: 'Task title' },
+      description: { type: 'string', description: 'Task description' },
+      responsibleId: { type: 'string', description: 'Responsible user ID' },
+      deadline: { type: 'string', description: 'Deadline in ISO format (e.g. 2026-03-31T18:00:00)' },
+      priority: { 
+        type: 'string', 
+        enum: ['0', '1', '2'], 
+        description: '0=Low, 1=Normal, 2=High',
+        default: '1'
+      },
+      crmEntities: { 
+        type: 'array', 
+        items: { type: 'string' },
+        description: 'CRM entities to link (e.g. ["DEAL_1", "CONTACT_5"])'
+      },
+      groupId: { type: 'string', description: 'Group/Project ID to assign task to' },
+      allowTimeTracking: { type: 'string', enum: ['Y', 'N'], description: 'Enable time tracking (Y/N)' },
+      timeEstimate: { type: 'number', description: 'Planned time in seconds (e.g. 18000 = 5 hours)' },
+    },
+    required: ['title']
+  }
+};
+
+export const getTaskTool: Tool = {
+  name: 'bitrix24_get_task',
+  description: 'Retrieve task information by ID',
+  inputSchema: {
+    type: 'object',
+    properties: {
+      id: { type: 'string', description: 'Task ID' }
+    },
+    required: ['id']
+  }
+};
+
+export const listTasksTool: Tool = {
+  name: 'bitrix24_list_tasks',
+  description: 'List tasks with optional filtering',
+  inputSchema: {
+    type: 'object',
+    properties: {
+      limit: { type: 'number', description: 'Maximum number of tasks to return', default: 20 },
+      filter: { 
+        type: 'object', 
+        description: 'Filter criteria. Status values: 1=New, 2=Pending, 3=In Progress, 4=Completed, 5=Deferred. Example: {"STATUS": 3}' 
+      },
+      orderBy: {
+        type: 'string',
+        enum: ['ID', 'TITLE', 'DEADLINE', 'DATE_CREATE'],
+        description: 'Field to order by',
+        default: 'DEADLINE'
+      },
+      orderDirection: {
+        type: 'string',
+        enum: ['ASC', 'DESC'],
+        description: 'Order direction',
+        default: 'ASC'
+      }
+    }
+  }
+};
+
+export const updateTaskTool: Tool = {
+  name: 'bitrix24_update_task',
+  description: 'Update an existing task in Bitrix24',
+  inputSchema: {
+    type: 'object',
+    properties: {
+      id: { type: 'string', description: 'Task ID' },
+      title: { type: 'string', description: 'Task title' },
+      description: { type: 'string', description: 'Task description' },
+      responsibleId: { type: 'string', description: 'Responsible user ID' },
+      deadline: { type: 'string', description: 'Deadline in ISO format' },
+      priority: { 
+        type: 'string', 
+        enum: ['0', '1', '2'], 
+        description: '0=Low, 1=Normal, 2=High'
+      },
+      status: {
+        type: 'string',
+        enum: ['1', '2', '3', '4', '5'],
+        description: '1=New, 2=Pending, 3=In Progress, 4=Completed, 5=Deferred'
+      }
+    },
+    required: ['id']
+  }
+};
+
+// Group & Scrum Tools
+export const listGroupsTool: Tool = {
+  name: 'bitrix24_list_groups',
+  description: 'List workgroups and projects in Bitrix24',
+  inputSchema: {
+    type: 'object',
+    properties: {
+      limit: { type: 'number', description: 'Maximum number of groups to return', default: 50 },
+      filter: { type: 'object', description: 'Filter criteria (e.g., {"PROJECT": "Y"} for projects only)' }
+    }
+  }
+};
+
+export const getGroupTool: Tool = {
+  name: 'bitrix24_get_group',
+  description: 'Get workgroup details by ID',
+  inputSchema: {
+    type: 'object',
+    properties: {
+      id: { type: 'string', description: 'Group ID' }
+    },
+    required: ['id']
+  }
+};
+
+export const listScrumsTool: Tool = {
+  name: 'bitrix24_list_scrums',
+  description: 'List all Scrum projects in Bitrix24',
+  inputSchema: {
+    type: 'object',
+    properties: {
+      limit: { type: 'number', description: 'Maximum number of scrums to return', default: 20 }
+    }
+  }
+};
+
+export const listSprintsTool: Tool = {
+  name: 'bitrix24_list_sprints',
+  description: 'List sprints for a specific Scrum project',
+  inputSchema: {
+    type: 'object',
+    properties: {
+      scrumId: { type: 'string', description: 'Scrum (group) ID' },
+      limit: { type: 'number', description: 'Maximum number of sprints to return', default: 20 }
+    },
+    required: ['scrumId']
+  }
+};
+
+export const listSprintTasksTool: Tool = {
+  name: 'bitrix24_list_sprint_tasks',
+  description: 'List tasks in a specific sprint',
+  inputSchema: {
+    type: 'object',
+    properties: {
+      sprintId: { type: 'string', description: 'Sprint ID' },
+      limit: { type: 'number', description: 'Maximum number of tasks to return', default: 50 }
+    },
+    required: ['sprintId']
+  }
+};
+
 // Export all tools
 export const allTools = [
   createContactTool,
@@ -966,7 +1123,18 @@ export const allTools = [
   getContactsWithUserNamesTool,
   getDealsWithUserNamesTool,
   getLeadsWithUserNamesTool,
-  getCompaniesWithUserNamesTool
+  getCompaniesWithUserNamesTool,
+  // Task Management Tools
+  createTaskTool,
+  getTaskTool,
+  listTasksTool,
+  updateTaskTool,
+  // Group & Scrum Tools
+  listGroupsTool,
+  getGroupTool,
+  listScrumsTool,
+  listSprintsTool,
+  listSprintTasksTool,
 ];
 
 // Tool execution handlers
@@ -1510,7 +1678,67 @@ export async function executeToolCall(name: string, args: any): Promise<any> {
         });
         const companiesWithNames = await bitrix24Client.enhanceWithUserNames(companiesRaw.slice(0, args.limit || 20));
         return { success: true, companies: companiesWithNames, message: `Retrieved ${companiesWithNames.length} companies with user names resolved` };
+      
+      case 'bitrix24_create_task':
+        const task: BitrixTask = {
+          TITLE: args.title,
+          DESCRIPTION: args.description,
+          RESPONSIBLE_ID: args.responsibleId,
+          DEADLINE: args.deadline,
+          PRIORITY: args.priority || '1',
+          UF_CRM_TASK: args.crmEntities,
+          GROUP_ID: args.groupId,
+          ALLOW_TIME_TRACKING: args.allowTimeTracking || undefined,
+          TIME_ESTIMATE: args.timeEstimate ? Number(args.timeEstimate) : undefined,
+        };
+        const taskId = await bitrix24Client.createTask(task);
+        return { success: true, taskId, message: `Task created with ID: ${taskId}` };
 
+      case 'bitrix24_get_task':
+        const taskData = await bitrix24Client.getTask(args.id);
+        return { success: true, task: taskData };
+
+      case 'bitrix24_list_tasks':
+        const order: Record<string, string> = {};
+        order[args.orderBy || 'DEADLINE'] = args.orderDirection || 'ASC';
+        const tasks = await bitrix24Client.listTasks({
+          filter: args.filter,
+          order,
+          select: ['ID', 'TITLE', 'DESCRIPTION', 'RESPONSIBLE_ID', 'DEADLINE', 'PRIORITY', 'STATUS', 'DATE_CREATE']
+        });
+        return { success: true, tasks: tasks.slice(0, args.limit || 20), count: tasks.length };
+
+      case 'bitrix24_update_task':
+        const updateTask: Partial<BitrixTask> = {};
+        if (args.title) updateTask.TITLE = args.title;
+        if (args.description) updateTask.DESCRIPTION = args.description;
+        if (args.responsibleId) updateTask.RESPONSIBLE_ID = args.responsibleId;
+        if (args.deadline) updateTask.DEADLINE = args.deadline;
+        if (args.priority) updateTask.PRIORITY = args.priority;
+        if (args.status) updateTask.STATUS = args.status;
+        const taskUpdated = await bitrix24Client.updateTask(args.id, updateTask);
+        return { success: true, updated: taskUpdated, message: `Task ${args.id} updated successfully` };
+      
+      case 'bitrix24_list_groups':
+        const groups = await bitrix24Client.listGroups(args.filter, args.limit || 50);
+        return { success: true, groups, count: groups.length };
+
+      case 'bitrix24_get_group':
+        const groupData = await bitrix24Client.getGroup(args.id);
+        return { success: true, group: groupData };
+
+      case 'bitrix24_list_scrums':
+        const scrums = await bitrix24Client.listScrums(args.limit || 20);
+        return { success: true, scrums, count: scrums.length };
+
+      case 'bitrix24_list_sprints':
+        const sprints = await bitrix24Client.listSprints(args.scrumId, args.limit || 20);
+        return { success: true, sprints, count: sprints.length };
+
+      case 'bitrix24_list_sprint_tasks':
+        const sprintTasks = await bitrix24Client.listSprintTasks(args.sprintId, args.limit || 50);
+        return { success: true, tasks: sprintTasks, count: sprintTasks.length };
+      
       default:
         throw new Error(`Unknown tool: ${name}`);
     }
