@@ -2,6 +2,12 @@
 
 A comprehensive Model Context Protocol (MCP) server for Bitrix24 CRM integration, enabling AI agents to seamlessly interact with your Bitrix24 instance through a powerful set of tools.
 
+In this fork: 
+- `bitrix24_create_task` - Create new tasks
+- `bitrix24_get_task` - Retrieve task by ID
+- `bitrix24_list_tasks` - List tasks with filtering
+- `bitrix24_update_task` - Update existing tasks
+
 ## 🚀 Features
 
 - **Complete CRM Management**: Create, read, update, and list contacts, deals, and tasks
